@@ -37,8 +37,9 @@ public class LoadNetData {
             ResultSet res = stm.executeQuery();
             while(res.next()) {
                 result.add(new NetModel(res.getString(1),
-                        res.getString(2),
                         res.getString(3),
+                        res.getInt(2),
+                        res.getInt(5),
                         res.getDouble(4)));
             }
         } catch(SQLException e) {

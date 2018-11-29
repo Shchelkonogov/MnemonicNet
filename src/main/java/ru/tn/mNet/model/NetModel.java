@@ -1,56 +1,38 @@
 package ru.tn.mNet.model;
 
+/**
+ * Класс описывающий модель графа сети
+ */
 public class NetModel {
 
-    String n1, n2, n3;
-    double n4;
+    private String name, svgName;
+    private int svgId, objectId;
+    private double length;
 
-    public NetModel(String n1, String n2, String n3, double n4) {
-        this.n1 = n1;
-        this.n2 = n2;
-        this.n3 = n3;
-        this.n4 = n4;
+    public NetModel(String name, String svgName, int svgId, int objectId, double length) {
+        this.name = name;
+        this.svgName = svgName;
+        this.svgId = svgId;
+        this.objectId = objectId;
+        this.length = length;
     }
 
-    public String getN1() {
-        return n1;
+    public String getSvgName() {
+        return svgName;
     }
 
-    public void setN1(String n1) {
-        this.n1 = n1;
-    }
-
-    public String getN2() {
-        return n2;
-    }
-
-    public void setN2(String n2) {
-        this.n2 = n2;
-    }
-
-    public String getN3() {
-        return n3;
-    }
-
-    public void setN3(String n3) {
-        this.n3 = n3;
-    }
-
-    public double getN4() {
-        return n4;
-    }
-
-    public void setN4(double n4) {
-        this.n4 = n4;
+    public double getLength() {
+        return length;
     }
 
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("NetModel{");
-        sb.append("n1='").append(n1).append('\'');
-        sb.append(", n2='").append(n2).append('\'');
-        sb.append(", n3='").append(n3).append('\'');
-        sb.append(", n4=").append(n4);
+        sb.append("name='").append(name).append('\'');
+        sb.append(", svgName='").append(svgName).append('\'');
+        sb.append(", svgId=").append(svgId);
+        sb.append(", objectId=").append(objectId);
+        sb.append(", lenght=").append(length);
         sb.append('}');
         return sb.toString();
     }
