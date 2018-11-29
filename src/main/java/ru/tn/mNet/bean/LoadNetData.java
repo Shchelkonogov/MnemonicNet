@@ -12,10 +12,15 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Бин который грузит данные по графу для формирования svg рисунка
+ */
 @Stateless
 public class LoadNetData {
 
-    private static final String SQL = "select n1, n2, n3, n4, rownum from table(mnemo.get_net_mnemo_graph(?)) order by rownum desc";
+    private static final String SQL = "select n1, n2, n3, n4, n5, rownum from table(mnemo.get_net_mnemo_graph(?)) " +
+            "where n5 is not null or n3 = 'Труба' order by rownum desc";
+    private static final String SQL_ALTER = "alter session set NLS_NUMERIC_CHARACTERS='.,'";
 
     @Resource(name = "OracleDataSource", mappedName = "jdbc/OracleDataSource")
     private DataSource ds;
@@ -23,7 +28,10 @@ public class LoadNetData {
     public List<NetModel> loadData(String object) {
         List<NetModel> result = new ArrayList<>();
         try(Connection connect = ds.getConnection();
+                PreparedStatement stmAlter = connect.prepareStatement(SQL_ALTER);
                 PreparedStatement stm = connect.prepareStatement(SQL)) {
+            stmAlter.executeQuery();
+
             stm.setString(1, object);
 
             ResultSet res = stm.executeQuery();

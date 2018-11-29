@@ -9,6 +9,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ * Stateless бин, который грузит части svg картинки для формирования графа
+ */
 @Stateless
 public class LoadSvgContent {
 
