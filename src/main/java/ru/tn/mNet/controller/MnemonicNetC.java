@@ -1,17 +1,19 @@
 package ru.tn.mNet.controller;
 
-import org.primefaces.event.timeline.TimelineDragDropEvent;
-import org.primefaces.event.timeline.TimelineSelectEvent;
-import org.primefaces.model.timeline.TimelineEvent;
+import org.primefaces.event.timeline.TimelineAddEvent;
 import org.primefaces.model.timeline.TimelineModel;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.view.ViewScoped;
 import java.io.Serializable;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 
+/**
+ * Контроллер для мнемосхемы сети
+ */
 @ManagedBean
 @ViewScoped
 public class MnemonicNetC implements Serializable {
@@ -22,31 +24,22 @@ public class MnemonicNetC implements Serializable {
     private Date max;
     private long zoomMin;
     private long zoomMax;
+    private String object;
 
+    /**
+     * Инифиализация timeline
+     */
     @PostConstruct
     public void init() {
         model = new TimelineModel();
 
-        Calendar cal = Calendar.getInstance();
-        cal.set(2015, Calendar.MAY, 25, 0, 0, 0);
-        model.add(new TimelineEvent("First", cal.getTime()));
+        zoomMin = 1000L * 60 * 2;
 
-        cal.set(2015, Calendar.MAY, 26, 0, 0, 0);
-        model.add(new TimelineEvent("Last", cal.getTime()));
+        zoomMax = 1000L * 60 * 60 * 24 * 3;
 
-        // lower limit of visible range
-        cal.set(2015, Calendar.JANUARY, 1, 0, 0, 0);
-        min = cal.getTime();
-
-        // upper limit of visible range
-        cal.set(2015, Calendar.DECEMBER, 31, 0, 0, 0);
-        max = cal.getTime();
-
-        // one day in milliseconds for zoomMin
-        zoomMin = 1000L * 60 * 60 * 24;
-
-        // about three months in milliseconds for zoomMax
-        zoomMax = 1000L * 60 * 60 * 24 * 31 * 3;
+        LocalDate date = LocalDate.now().plusDays(1);
+        min = Date.from(date.minusDays(3).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        max = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 
     public TimelineModel getModel() {
@@ -65,18 +58,23 @@ public class MnemonicNetC implements Serializable {
         return zoomMin;
     }
 
-    public void onSelect(TimelineSelectEvent e) {
-        //TimelineEvent timelineEvent = e.getTimelineEvent();
-
-        // get your Id
-        //String roadmapId = timelineEvent.getEndDate().toString();
-        System.out.println("fffffffffffffffffffffff");
-    }
-    public void onDrop(TimelineDragDropEvent e) {
-        System.out.println("dddddddddddddddddddddddd");
-    }
-
-        public long getZoomMax() {
+    public long getZoomMax() {
         return zoomMax;
+    }
+
+    public String getObject() {
+        return object;
+    }
+
+    public void setObject(String object) {
+        this.object = object;
+    }
+
+    /**
+     * Обработчик двойного клика на timeline
+     * @param e событие двойного клика
+     */
+    public void add(TimelineAddEvent e) {
+        System.out.println("time to add: " + e.getStartDate());
     }
 }
