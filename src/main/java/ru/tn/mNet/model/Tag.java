@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Класс описывающий теги svg объекта
+ */
 public class Tag {
 
     private String name;
@@ -44,7 +47,8 @@ public class Tag {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("<");
+        final StringBuffer sb = new StringBuffer("\n");
+        sb.append('<');
         sb.append(name);
         if (Objects.nonNull(attrs)) {
             for (Attr item: attrs) {
@@ -62,10 +66,13 @@ public class Tag {
             }
             if (Objects.nonNull(stringTags)) {
                 for (String item: stringTags) {
+                    sb.append("\n");
                     sb.append(item);
                 }
             }
-            sb.append(value);
+            if(Objects.nonNull(value)) {
+                sb.append(value);
+            }
             sb.append("</").append(name).append('>');
         }
         return sb.toString();
