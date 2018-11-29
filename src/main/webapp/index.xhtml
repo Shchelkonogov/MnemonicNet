@@ -6,6 +6,9 @@
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:p="http://primefaces.org/ui">
+<f:metadata>
+    <f:viewParam name="objectId" value="#{mnemonicNetC.object}"/>
+</f:metadata>
 <h:head>
     <meta content="UTF-8"/>
     <title>Мнемосхема сети</title>
@@ -23,26 +26,39 @@
             min-height: 400px;
         }
     </style>
+
+    <script type="application/javascript">
+        if (typeof links === 'undefined') {
+            links = {};
+            links.locales = {};
+        } else if (typeof links.locales === 'undefined') {
+            links.locales = {};
+        }
+
+        links.locales['ru'] = {
+            'MONTHS': ['Январь', 'Февраль' , 'Март' , 'Апрель' , 'Май' , 'Июнь' , 'Июль' , 'Август' , 'Сентябрь','Октябрь','Ноябрь','Декабрь'],
+            'MONTHS_SHORT': ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+            'DAYS': ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Субота'],
+            'DAYS_SHORT': ['Воск','Пон' , 'Вт' , 'Ср' , 'Четв' , 'Пят' , 'Суб']
+        };
+    </script>
+
 </h:head>
 <h:body>
     <div id="container">
-        <object data="#{request.contextPath}/getSvg" id="svgDocument" type="image/svg+xml" style="width: 100%; height: 100%"/>
+        <object data="#{request.contextPath}/getSvg?objectId=#{mnemonicNetC.object}" id="svgDocument" type="image/svg+xml" style="width: 100%; height: 100%"/>
     </div>
-    <p:timeline id="timeline" value="#{mnemonicNetC.model}"
-                editable="true"
-                eventMargin="0"
-                minHeight="120"
-                stackEvents="false"
-                min="#{mnemonicNetC.min}"
-                max="#{mnemonicNetC.max}"
-                showNavigation="false" showButtonNew="false"
-                showCurrentTime="false"
-                axisOnTop="true"
-                zoomMin="28800000"
-                dropActiveStyleClass="ui-state-highlight" dropHoverStyleClass="ui-state-hover">
-        <p:ajax event="select" listener="#{mnemonicNetC.onSelect}" global="false" process="timeline"/>
-        <p:ajax event="drop" listener="#{mnemonicNetC.onDrop}"
-                global="false"/>
-    </p:timeline>
+    <h:form>
+        <p:timeline id="timeline" widgetVar="timeline" value="#{mnemonicNetC.model}"
+                    locale="ru"
+                    editable="true"
+                    min="#{mnemonicNetC.min}"
+                    max="#{mnemonicNetC.max}"
+                    zoomMin="#{mnemonicNetC.zoomMin}"
+                    zoomMax="#{mnemonicNetC.zoomMax}"
+                    showCurrentTime="false">
+            <p:ajax event="add" listener="#{mnemonicNetC.add}" onstart="PF('timeline').cancelAdd()" />
+        </p:timeline>
+    </h:form>
 </h:body>
 </html>
