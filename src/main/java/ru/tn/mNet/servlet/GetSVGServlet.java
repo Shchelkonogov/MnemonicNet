@@ -121,17 +121,17 @@ public class GetSVGServlet extends HttpServlet {
                     rootTag.addTag(svgElement);
 
                     //Добавляем текст со временем к размерам
-                    String s1 = "tп=" + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(xCurrentPosition / 1.6))
+                    String timeDirect = "tп=" + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(xCurrentPosition / 1.6))
                             .setScale(0, RoundingMode.HALF_EVEN)
                             .longValueExact())
                             .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
-                    String s2 = " tо=" + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf((2 * graphWidthMax - xCurrentPosition) / 1.6))
+                    String timeReverse = " tо=" + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf((2 * graphWidthMax - xCurrentPosition) / 1.6))
                             .setScale(0, RoundingMode.HALF_EVEN)
                             .longValueExact())
                             .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
 
-                    Tag text1 = new Tag(TagInter.TEXT, false);
-                    text1.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
+                    svgElement = new Tag(TagInter.TEXT, false);
+                    svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
                             new Attr("xml:space", "preserve"),
                             new Attr("text-anchor", "middle"),
                             new Attr("font-family", "serif"),
@@ -140,8 +140,8 @@ public class GetSVGServlet extends HttpServlet {
                             new Attr("x", String.valueOf(xTextPosition)),
                             new Attr(AttrInter.STROKE_WIDTH, "0"),
                             new Attr(AttrInter.FILL, "#000000")));
-                    text1.setValue(s1 + s2);
-                    rootTag.addTag(text1);
+                    svgElement.setValue(timeDirect + timeReverse);
+                    rootTag.addTag(svgElement);
                 }
 
                 //Добавляем вертикальные пунктирные линии для размера
