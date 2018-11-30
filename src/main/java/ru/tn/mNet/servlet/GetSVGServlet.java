@@ -48,15 +48,15 @@ public class GetSVGServlet extends HttpServlet {
                 new Attr("xmlns:xlink", "http://www.w3.org/1999/xlink")));
 
         //Линия на которой размещаются все объекты графа
-        Tag line = new Tag(TagInter.LINE, true);
-        line.addAttrs(Arrays.asList(new Attr(AttrInter.Y2, "640"),
-                new Attr(AttrInter.X2, "1280"),
+        Tag svgElement = new Tag(TagInter.LINE, true);
+        svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.Y2, "640"),
+                new Attr(AttrInter.X2, String.valueOf(windowWidthMax)),
                 new Attr(AttrInter.Y1, "640"),
                 new Attr(AttrInter.X1, "0"),
                 new Attr(AttrInter.STROKE_WIDTH, "5"),
                 new Attr(AttrInter.STROKE, "#ff0000"),
                 new Attr(AttrInter.FILL, "none")));
-        rootTag.addTag(line);
+        rootTag.addTag(svgElement);
 
         List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"));
         System.out.println("Graph data: " + netData);
@@ -67,7 +67,6 @@ public class GetSVGServlet extends HttpServlet {
 
         double xCurrentPosition = 0;
         double proportion;
-        Tag svgElement;
         for(NetModel netItem: netData) {
             System.out.println("Draw " + netItem.getSvgName());
             if (!netItem.getSvgName().equals("Труба")) {
