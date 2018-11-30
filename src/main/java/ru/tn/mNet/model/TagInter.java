@@ -1,9 +1,12 @@
 package ru.tn.mNet.model;
 
+/**
+ * Набор предопределенных тегов svg
+ */
 public interface TagInter {
 
     String SVG = "svg";
-    String WIDTH = "width";
-    String HEIGHT = "height";
     String LINE = "line";
+    String TEXT = "text";
+    String GROUP = "g";
 }

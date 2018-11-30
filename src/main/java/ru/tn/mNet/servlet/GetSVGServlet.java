@@ -2,10 +2,7 @@ package ru.tn.mNet.servlet;
 
 import ru.tn.mNet.bean.LoadNetData;
 import ru.tn.mNet.bean.LoadSvgContent;
-import ru.tn.mNet.model.Attr;
-import ru.tn.mNet.model.NetModel;
-import ru.tn.mNet.model.Tag;
-import ru.tn.mNet.model.TagInter;
+import ru.tn.mNet.model.*;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -14,14 +11,19 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
+/**
+ * Сервлет формирующий svg сети
+ */
 @WebServlet(name = "GetSVGServlet", urlPatterns = "/getSvg")
 public class GetSVGServlet extends HttpServlet {
+
+    private HashMap<String, SVG> svgItemsMap = new HashMap<>();
 
     @Inject
     private LoadSvgContent bean;
@@ -31,158 +33,146 @@ public class GetSVGServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        System.out.println("Load mnemonic scheme net for: " + req.getParameter("objectId"));
+
+        int windowWidthMax = 1280;
+        double graphWidthMax = 0;
+        int objectsCount = 0;
+        SVG svg;
+
         Tag rootTag = new Tag(TagInter.SVG, false);
-        rootTag.addAttrs(Arrays.asList(new Attr(TagInter.WIDTH, "1280"),
-                new Attr(TagInter.HEIGHT, "1024"),
-                new Attr("xmlns", "http://www.w3.org/2000/svg"),
+        rootTag.addAttrs(Arrays.asList(new Attr(AttrInter.WIDTH, String.valueOf(windowWidthMax)),
+                new Attr(AttrInter.HEIGHT, "1024"),
+                new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
                 new Attr("xmlns:svg", "http://www.w3.org/2000/svg"),
                 new Attr("xmlns:xlink", "http://www.w3.org/1999/xlink")));
 
+        //Линия на которой размещаются все объекты графа
         Tag line = new Tag(TagInter.LINE, true);
-        line.addAttrs(Arrays.asList(new Attr("y2", "640"),
-                new Attr("x2", "1280"),
-                new Attr("y1", "640"),
-                new Attr("x1", "0"),
-                new Attr("stroke-width", "5"),
-                new Attr("stroke", "#ff0000"),
-                new Attr("fill", "none")));
+        line.addAttrs(Arrays.asList(new Attr(AttrInter.Y2, "640"),
+                new Attr(AttrInter.X2, "1280"),
+                new Attr(AttrInter.Y1, "640"),
+                new Attr(AttrInter.X1, "0"),
+                new Attr(AttrInter.STROKE_WIDTH, "5"),
+                new Attr(AttrInter.STROKE, "#ff0000"),
+                new Attr(AttrInter.FILL, "none")));
         rootTag.addTag(line);
 
-        List<NetModel> netData = netDataBean.loadData("06-03-183");
-        System.out.println(netData);
-
-        int xMax = 1280;
-        int yMax = 0;
+        List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"));
+        System.out.println("Graph data: " + netData);
 
         for (NetModel item: netData) {
-            yMax += item.getN4();
+            graphWidthMax += item.getLength();
         }
-        //System.out.println(yMax);
 
-        int xCurent = 0;
+        double xCurrentPosition = 0;
+        double proportion;
+        Tag svgElement;
+        for(NetModel netItem: netData) {
+            System.out.println("Draw " + netItem.getSvgName());
+            if (!netItem.getSvgName().equals("Труба")) {
+                proportion = (xCurrentPosition * windowWidthMax) / graphWidthMax;
 
-        //int xCurrent1 = 0;
+                //Добавляем объект на граф
+                svg = getSVG(netItem.getSvgName());
+                svgElement = new Tag(TagInter.GROUP, false);
+                svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(" + (proportion - (svg.getWidth() / 2))
+                        + ", " + (640 - (svg.getHeight() / 2)) + ")"));
+                svgElement.addStringTags(svg.getValue());
+                rootTag.addTag(svgElement);
 
-        int i = 0;
-        for (NetModel item: netData) {
-            //if (!item.getN3().equals("Камера теплосети")) {
-            if (!item.getN3().equals("Труба")) {
-                Pattern pattern = Pattern.compile("<!--(.*)-->");
-                Matcher matcher = pattern.matcher(bean.getSvg(item.getN3()));
-                if(matcher.find()) {
+                if (netData.indexOf(netItem) != 0) {
+                    objectsCount++;
 
-                    System.out.println(matcher.group() + " " + item.getN3());
-                    double width = getDouble(matcher.group(), "width");
-                    double height = getDouble(matcher.group(), "height");
-                    //System.out.println(width);
-                    //System.out.println(height);
+                    //Добавляем правые стрелки для размера
+                    svg = getSVG("arrow_right");
+                    svgElement = new Tag(TagInter.GROUP, false);
+                    svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(" + (proportion - svg.getWidth())
+                            + ", " + (840 + (5 * objectsCount) + (svg.getHeight() * (objectsCount - 1))) + ")"));
+                    svgElement.addStringTags(svg.getValue());
+                    rootTag.addTag(svgElement);
 
+                    //Добавляем горизонтальную линию размера
+                    double yLinePosition = 840 + (5 * objectsCount) + ((objectsCount - 1) * svg.getHeight()) + (svg.getHeight() / 2);
+                    svgElement = new Tag(TagInter.LINE, true);
+                    svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.Y2, String.valueOf(yLinePosition)),
+                            new Attr(AttrInter.X2, String.valueOf(proportion - svg.getWidth())),
+                            new Attr(AttrInter.Y1, String.valueOf(yLinePosition)),
+                            new Attr(AttrInter.X1, String.valueOf(svg.getWidth() + 1)),
+                            new Attr(AttrInter.STROKE, "#000000"),
+                            new Attr(AttrInter.FILL, "none")));
+                    rootTag.addTag(svgElement);
 
-                    double height2 = 0;
-                    if (netData.indexOf(item) != 0) {
-                        Pattern pattern1 = Pattern.compile("<!--(.*)-->");
-                        Matcher matcher1 = pattern1.matcher(bean.getSvg("arrow_right"));
-                        if(matcher1.find()) {
-                            i++;
+                    double yTextPosition = 840 + (5 * objectsCount) + ((objectsCount - 1) * svg.getHeight()) + (svg.getHeight() / 2);
+                    double xTextPosition = (proportion - svg.getWidth() + (svg.getWidth() + 1)) / 2;
 
-                            System.out.println(matcher1.group() + " " + "arrow_right");
-                            double width1 = getDouble(matcher1.group(), "width");
-                            double height1 = getDouble(matcher1.group(), "height");
+                    //Добавляем текст с расстоянием к размерам
+                    svgElement = new Tag(TagInter.TEXT, false);
+                    svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
+                            new Attr("xml:space", "preserve"),
+                            new Attr("text-anchor", "middle"),
+                            new Attr("font-family", "serif"),
+                            new Attr("font-size", "16"),
+                            new Attr("y", String.valueOf(yTextPosition - 3)),
+                            new Attr("x", String.valueOf(xTextPosition)),
+                            new Attr(AttrInter.STROKE_WIDTH, "0"),
+                            new Attr(AttrInter.FILL, "#000000")));
+                    svgElement.setValue(String.valueOf(new BigDecimal(String.valueOf(xCurrentPosition)).setScale(2, RoundingMode.HALF_EVEN)) + "м");
+                    rootTag.addTag(svgElement);
 
-                            height2 = height1;
+                    //Добавляем текст со временем к размерам
+                    String s1 = "tп=" + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(xCurrentPosition / 1.6))
+                            .setScale(0, RoundingMode.HALF_EVEN)
+                            .longValueExact())
+                            .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
+                    String s2 = " tо=" + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf((2 * graphWidthMax - xCurrentPosition) / 1.6))
+                            .setScale(0, RoundingMode.HALF_EVEN)
+                            .longValueExact())
+                            .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
 
-                            Tag group = new Tag("g", false);
-                            group.addAttr(new Attr("transform", "translate(" + ((xCurent * xMax) / yMax - width1) + ", " + (840 + (5 * i) + (height1 * (i - 1))) + ")"));
-                            group.addStringTags(bean.getSvg("arrow_right"));
-                            rootTag.addTag(group);
-
-                            Tag line2 = new Tag(TagInter.LINE, true);
-                            line2.addAttrs(Arrays.asList(new Attr("y2", String.valueOf(840 + (5 * i) + ((i - 1) * height1) + (height1 / 2))),
-                                    new Attr("x2", String.valueOf(((xCurent * xMax) / yMax) - width1)),
-                                    new Attr("y1", String.valueOf(840 + (5 * i) + ((i - 1) * height1) + (height1 / 2))),
-                                    new Attr("x1", String.valueOf(width1 + 1)),
-                                    //new Attr("stroke-width", "5"),
-                                    new Attr("stroke", "#000000"),
-                                    new Attr("fill", "none")));
-                            rootTag.addTag(line2);
-
-                            Tag text = new Tag("text", false);
-                            text.addAttrs(Arrays.asList(new Attr("xmlns", "http://www.w3.org/2000/svg"),
-                                    new Attr("xml:space", "preserve"),
-                                    new Attr("text-anchor", "middle"),
-                                    new Attr("font-family", "serif"),
-                                    new Attr("font-size", "16"),
-                                    new Attr("y", String.valueOf(840 + (5 * i) + ((i - 1) * height1) + (height1 / 2) - 5)),
-                                    new Attr("x", String.valueOf((((xCurent * xMax) / yMax) - width1 + (width1 + 1)) / 2)),
-                                    //new Attr("x", String.valueOf(width1 + 1)),
-                                    new Attr("stroke-linecap", "null"),
-                                    new Attr("stroke-linejoin", "null"),
-                                    new Attr("stroke-dasharray", "null"),
-                                    new Attr("stroke-width", "0"),
-                                    new Attr("fill", "#000000")));
-                            text.setValue(String.valueOf(xCurent) + "м");
-                            rootTag.addTag(text);
-
-                            //xCurrent1 = 0;
-                        }
-                    }
-
-                    Tag line1 = new Tag(TagInter.LINE, true);
-                    line1.addAttrs(Arrays.asList(new Attr("y2", "730"),
-                            new Attr("x2", String.valueOf((xCurent * xMax) / yMax)),
-                            new Attr("y1", String.valueOf(840 + ((i - 1) * (height2 + 5)) + (i == 0 ? 5 : 0))),
-                            //new Attr("y1", "840"),
-                            new Attr("x1", String.valueOf((xCurent * xMax) / yMax)),
-                            new Attr("stroke-linecap", "square"),
-                            new Attr("stroke-dasharray", "5,5"),
-                            new Attr("stroke", "#000000"),
-                            new Attr("fill", "none")));
-                    rootTag.addTag(line1);
-
-                    Tag group = new Tag("g", false);
-                    group.addAttr(new Attr("transform", "translate(" + (((xCurent * xMax) / yMax) - (width / 2)) + ", " + (640 - (height / 2)) + ")"));
-                    group.addStringTags(bean.getSvg(item.getN3()));
-                    rootTag.addTag(group);
-
-
+                    Tag text1 = new Tag(TagInter.TEXT, false);
+                    text1.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
+                            new Attr("xml:space", "preserve"),
+                            new Attr("text-anchor", "middle"),
+                            new Attr("font-family", "serif"),
+                            new Attr("font-size", "16"),
+                            new Attr("y", String.valueOf(yTextPosition + 13)),
+                            new Attr("x", String.valueOf(xTextPosition)),
+                            new Attr(AttrInter.STROKE_WIDTH, "0"),
+                            new Attr(AttrInter.FILL, "#000000")));
+                    text1.setValue(s1 + s2);
+                    rootTag.addTag(text1);
                 }
+
+                //Добавляем вертикальные пунктирные линии для размера
+                svgElement = new Tag(TagInter.LINE, true);
+                svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.Y2, "730"),
+                        new Attr(AttrInter.X2, String.valueOf(proportion)),
+                        new Attr(AttrInter.Y1, String.valueOf(840
+                                + ((objectsCount - 1) * ((netData.indexOf(netItem) == 0 ? 0 : getSVG("arrow_right").getHeight()) + 5))
+                                + (objectsCount == 0 ? 5 : 0))),
+                        new Attr(AttrInter.X1, String.valueOf(proportion)),
+                        new Attr("stroke-linecap", "square"),
+                        new Attr("stroke-dasharray", "5,5"),
+                        new Attr(AttrInter.STROKE, "#000000"),
+                        new Attr(AttrInter.FILL, "none")));
+                rootTag.addTag(svgElement);
             } else {
-                xCurent += item.getN4();
-                //xCurrent1 += item.getN4();
-                System.out.println(xCurent + " " + item.getN3());
-            }//}
-        }
-
-        for (int j = 0; j < i; j++) {
-            Pattern pattern = Pattern.compile("<!--(.*)-->");
-            Matcher matcher = pattern.matcher(bean.getSvg("arrow_left"));
-            if(matcher.find()) {
-
-                System.out.println(matcher.group() + " " + "arrow_left");
-                double width = getDouble(matcher.group(), "width");
-                double height = getDouble(matcher.group(), "height");
-
-                Tag group = new Tag("g", false);
-                group.addAttr(new Attr("transform", "translate(-1, " + (840 + 5 + (j * 5) + (j * height)) + ")"));
-                group.addStringTags(bean.getSvg("arrow_left"));
-                rootTag.addTag(group);
+                xCurrentPosition += netItem.getLength();
             }
         }
 
-
-
-//        Tag group1 = new Tag("g", false);
-//        group1.addAttr(new Attr("transform", "translate(20, 300)"));
-//        group1.addStringTags(bean.getSvg("arrow_left"));
-//        rootTag.addTag(group1);
-//        Tag group2 = new Tag("g", false);
-//        group2.addAttr(new Attr("transform", "translate(0, 300)"));
-//        group2.addStringTags(bean.getSvg("arrow_right"));
-//        rootTag.addTag(group2);
+        //Добавляем левые стрелочки для обозначения расстояния
+        svg = getSVG("arrow_left");
+        for (int i = 0; i < objectsCount; i++) {
+            svgElement = new Tag(TagInter.GROUP, false);
+            svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(-1, " + (840 + 5 + (i * 5) + (i * svg.getHeight())) + ")"));
+            svgElement.addStringTags(svg.getValue());
+            rootTag.addTag(svgElement);
+        }
 
         String contentS = "<?xml version=\"1.0\"?>" + rootTag;
-
-        //System.out.println(contentS);
+//        System.out.println(contentS);
 
         byte[] context = contentS.getBytes("UTF-8");
 
@@ -191,17 +181,11 @@ public class GetSVGServlet extends HttpServlet {
         resp.getOutputStream().write(context);
     }
 
-    private double getDouble(String line, String patternPath) {
-        Pattern pattern = Pattern.compile(patternPath + "=\"\\d+[.]?\\d+\"");
-        Matcher matcher = pattern.matcher(line);
-        if(matcher.find()) {
-            Pattern patternData = Pattern.compile("\\d+[.]?\\d+");
-            Matcher matcherData = patternData.matcher(matcher.group());
-            if(matcherData.find()) {
-                return Double.valueOf(matcherData.group());
-            }
+    private SVG getSVG(String name) {
+        if (!svgItemsMap.containsKey(name)) {
+            System.out.println("Add to map item: " + name);
+            svgItemsMap.put(name, new SVG(bean.getSvg(name)));
         }
-        return 0;
+        return svgItemsMap.get(name);
     }
-
 }
