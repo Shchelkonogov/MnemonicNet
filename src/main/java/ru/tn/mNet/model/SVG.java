@@ -4,6 +4,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Класс описывающий svg объекты с размерами
+ */
 public class SVG {
 
     private String value;
