@@ -32,7 +32,7 @@ public class NetModel {
         sb.append(", svgName='").append(svgName).append('\'');
         sb.append(", svgId=").append(svgId);
         sb.append(", objectId=").append(objectId);
-        sb.append(", lenght=").append(length);
+        sb.append(", length=").append(length);
         sb.append('}');
         return sb.toString();
     }
