@@ -10,8 +10,6 @@ import ru.tn.mNet.model.svgCreate.Tag;
 import ru.tn.mNet.model.svgCreate.TagInter;
 
 import javax.ejb.EJB;
-import javax.inject.Inject;
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,7 +42,7 @@ public class GetSVGServlet extends HttpServlet {
     private LoadObjectParamData objectParamDataBean;
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         System.out.println("Load mnemonic scheme net for: " + req.getParameter("objectId"));
 
         SVG svg;
@@ -70,20 +68,16 @@ public class GetSVGServlet extends HttpServlet {
 
                 //Добавляем объект на граф
                 svg = getSVG(netItem.getSvgName());
+
+                String objectName = insertDataToSVG(svg.getValue(), "Name", netItem.getName());
+                objectName = insertDataToSVG(objectName, "T1", paramData.getT1());
+                objectName = insertDataToSVG(objectName, "T2", paramData.getT2());
+
                 svgElement = new Tag(TagInter.GROUP, false);
                 svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(" + (xCurrentPosition - (svg.getWidth() / 2))
                         + ", " + (640 - (svg.getHeight() / 2)) + ")"));
-//                svgElement.addStringTags(svg.getValue());
-
-                String test = insertDataToSVG(svg.getValue(), "Name", netItem.getName());
-                test = insertDataToSVG(test, "T1", paramData.getT1());
-                test = insertDataToSVG(test, "T2", paramData.getT2());
-
-//                svgElement.addStringTags(insertDataToSVG(svg.getValue(), "Name", netItem.getName()));
-                svgElement.addStringTags(test);
+                svgElement.addStringTags(objectName);
                 graphTags.add(svgElement);
-
-
 
                 //Добавляем вертикальные пунктирные линии для размера
                 svgElement = new Tag(TagInter.LINE, true);
@@ -100,7 +94,7 @@ public class GetSVGServlet extends HttpServlet {
                 graphTags.add(svgElement);
 
                 if (netData.indexOf(netItem) != 0) {
-
+                    //Добавляем разрывы на основной прямой графа сети
                     svg = getSVG("Переход");
                     svgElement = new Tag(TagInter.GROUP, false);
                     svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(" + (xCurrentPosition - (netLength / 2) - (svg.getWidth() / 2))
@@ -108,8 +102,7 @@ public class GetSVGServlet extends HttpServlet {
                     svgElement.addStringTags(svg.getValue());
                     graphTags.add(svgElement);
 
-
-                    //добавляем левые стрелочки для размера
+                    //добавляем левые стрелки для размера
                     svg = getSVG("arrow_left");
 
                     double yPosition = 800 + (graphObjectsCount * 5) + ((graphObjectsCount - 1) * svg.getHeight());
@@ -140,18 +133,14 @@ public class GetSVGServlet extends HttpServlet {
                             new Attr(AttrInter.FILL, "none")));
                     graphTags.add(svgElement);
 
-                    double xTextPosition = ((svg.getWidth() + 1) + xCurrentPosition - svg.getWidth()) / 2;
-
                     //Добавляем текст с расстоянием к размерам
                     svgElement = new Tag(TagInter.TEXT, false);
                     svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
                             new Attr("xml:space", "preserve"),
-//                            new Attr("text-anchor", "middle"),
                             new Attr("text-anchor", "start"),
                             new Attr("font-family", "serif"),
                             new Attr("font-size", "16"),
                             new Attr("y", String.valueOf(yLineTextPosition - 3)),
-//                            new Attr("x", String.valueOf(xTextPosition)),
                             new Attr("x", String.valueOf(svg.getWidth() + 1)),
                             new Attr(AttrInter.STROKE_WIDTH, "0"),
                             new Attr(AttrInter.FILL, "#000000")));
@@ -159,13 +148,8 @@ public class GetSVGServlet extends HttpServlet {
                             .setScale(2, RoundingMode.HALF_EVEN)) + "м");
                     graphTags.add(svgElement);
 
-                    //Добавляем текст со временем к размерам
+                    //Добавляем текст со временем подачи к размерам
                     String timeDirect = "tп: " + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(xNetLength / 1.6))
-                            .setScale(0, RoundingMode.HALF_EVEN)
-                            .longValueExact())
-                            .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
-                    String timeReverse = " tо: " + LocalTime.ofSecondOfDay(
-                            new BigDecimal(String.valueOf((2 * graphWidthMax - xNetLength) / 1.6))
                             .setScale(0, RoundingMode.HALF_EVEN)
                             .longValueExact())
                             .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
@@ -176,15 +160,19 @@ public class GetSVGServlet extends HttpServlet {
                             new Attr("text-anchor", "end"),
                             new Attr("font-family", "serif"),
                             new Attr("font-size", "16"),
-//                            new Attr("y", String.valueOf(yLineTextPosition + 13)),
                             new Attr("y", String.valueOf(yLineTextPosition - 3)),
-//                            new Attr("x", String.valueOf(xTextPosition)),
                             new Attr("x", String.valueOf(xCurrentPosition - svg.getWidth())),
                             new Attr(AttrInter.STROKE_WIDTH, "0"),
                             new Attr(AttrInter.FILL, "#000000")));
-//                    svgElement.setValue(timeDirect + timeReverse);
                     svgElement.setValue(timeDirect);
                     graphTags.add(svgElement);
+
+                    //Добавляем текст со временем обратки к размерам
+                    String timeReverse = " tо: " + LocalTime.ofSecondOfDay(
+                            new BigDecimal(String.valueOf((2 * graphWidthMax - xNetLength) / 1.6))
+                                    .setScale(0, RoundingMode.HALF_EVEN)
+                                    .longValueExact())
+                            .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
 
                     svgElement = new Tag(TagInter.TEXT, false);
                     svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
@@ -238,15 +226,30 @@ public class GetSVGServlet extends HttpServlet {
         resp.getOutputStream().write(context);
     }
 
+    /**
+     * Загружает svg элементы по имени
+     * (по сути метод кеширует svg элементы,
+     * что бы их не грузить каждый раз из базы)
+     * @param name имя svg элемента
+     * @return svg элемент
+     */
     private SVG getSVG(String name) {
         if (!svgItemsMap.containsKey(name)) {
             System.out.println("Add to map item: " + name);
             svgItemsMap.put(name, new SVG(bean.getSvg(name)));
         }
         return svgItemsMap.get(name);
+        //Отключение кеширования
 //        return new SVG(bean.getSvg(name));
     }
 
+    /**
+     * Вставляем в тег text новые значения
+     * @param svgPart текст svg элемента
+     * @param id имя id тега text в который надо внести новое значение
+     * @param value новое значение
+     * @return полученная строка, после изменения
+     */
     private String insertDataToSVG(String svgPart, String id, String value) {
         return svgPart.replaceAll("(<text .*id=\"" + id + "\".*>)(.*)(</text>)", "$1" + value + "$3");
     }
