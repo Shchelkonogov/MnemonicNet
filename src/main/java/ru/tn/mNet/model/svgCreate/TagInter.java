@@ -1,4 +1,4 @@
-package ru.tn.mNet.model;
+package ru.tn.mNet.model.svgCreate;
 
 /**
  * Набор предопределенных тегов svg

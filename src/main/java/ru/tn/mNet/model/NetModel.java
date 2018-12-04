@@ -9,6 +9,14 @@ public class NetModel {
     private int svgId, objectId;
     private double length;
 
+    /**
+     * Конструктор модели сети
+     * @param name имя объекта
+     * @param svgName имя svg элемента в бд
+     * @param svgId id svg элемента в бд
+     * @param objectId id объекта
+     * @param length длина объекта (используется только для труб)
+     */
     public NetModel(String name, String svgName, int svgId, int objectId, double length) {
         this.name = name;
         this.svgName = svgName;
@@ -17,12 +25,36 @@ public class NetModel {
         this.length = length;
     }
 
+    /**
+     * Возвращает имя svg элемента в бд
+     * @return имя
+     */
     public String getSvgName() {
         return svgName;
     }
 
+    /**
+     * Возвращает длину объекта (используется только для труб)
+     * @return длина
+     */
     public double getLength() {
         return length;
+    }
+
+    /**
+     * Возвращает имя объекта
+     * @return имя
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Возвращает id объекта
+     * @return id
+     */
+    public int getObjectId() {
+        return objectId;
     }
 
     @Override

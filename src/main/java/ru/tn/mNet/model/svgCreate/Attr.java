@@ -1,4 +1,4 @@
-package ru.tn.mNet.model;
+package ru.tn.mNet.model.svgCreate;
 
 /**
  * Класс описывающий атрибуты svg тегов
@@ -8,6 +8,11 @@ public class Attr {
     private String name;
     private String value;
 
+    /**
+     * Конструктор создания атрибута
+     * @param name имя атрибута
+     * @param value значение атрибута
+     */
     public Attr(String name, String value) {
         this.name = name;
         this.value = value;
@@ -15,8 +20,6 @@ public class Attr {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer(name);
-        sb.append("=\"").append(value).append('"');
-        return sb.toString();
+        return name + "=\"" + value + '"';
     }
 }

@@ -13,11 +13,18 @@ public class SVG {
     private double width = 0;
     private double height = 0;
 
+    /**
+     * Конструктор для модели svg объекта
+     * @param value текст svg элемента
+     */
     public SVG(String value) {
         this.value = value;
         calculateSize();
     }
 
+    /**
+     * Вычисляет размеры svg элемента
+     */
     private void calculateSize() {
         String line = getCommentLine(value);
         if (Objects.nonNull(line)) {
@@ -59,14 +66,26 @@ public class SVG {
         return null;
     }
 
+    /**
+     * Возращает текст svg элемента
+     * @return текст svg элемента
+     */
     public String getValue() {
         return value;
     }
 
+    /**
+     * Возвращает ширину элемента
+     * @return ширина
+     */
     public double getWidth() {
         return width;
     }
 
+    /**
+     * Возвращает длину элемента
+     * @return длина
+     */
     public double getHeight() {
         return height;
     }
