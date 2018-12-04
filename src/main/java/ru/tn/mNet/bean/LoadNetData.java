@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Бин который грузит данные по графу для формирования svg рисунка
+ * Stateless бин, который грузит данные по графу для формирования svg рисунка
  */
 @Stateless
 public class LoadNetData {
@@ -25,6 +25,11 @@ public class LoadNetData {
     @Resource(name = "OracleDataSource", mappedName = "jdbc/OracleDataSource")
     private DataSource ds;
 
+    /**
+     * Метод возвращает список элементов графа сети
+     * @param object id объекта бд ввиде String
+     * @return список объектов NetModel представляющий собой элементы сети
+     */
     public List<NetModel> loadData(String object) {
         List<NetModel> result = new ArrayList<>();
         try(Connection connect = ds.getConnection();

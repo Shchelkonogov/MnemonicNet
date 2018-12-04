@@ -20,6 +20,11 @@ public class LoadSvgContent {
     @Resource(name = "OracleDataSource", mappedName = "jdbc/OracleDataSource")
     private DataSource ds;
 
+    /**
+     * Загрузка svg кода по имени из бд
+     * @param name имя svg элемента
+     * @return строка svg элемента
+     */
     public String getSvg(String name) {
         try(Connection connect = ds.getConnection();
                 PreparedStatement stm = connect.prepareStatement(SQL)) {
