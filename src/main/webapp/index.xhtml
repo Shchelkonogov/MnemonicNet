@@ -19,11 +19,19 @@
     <style type="text/css">
         #container {
             border: 1px solid black;
-            width: 100%;
             box-sizing: border-box;
-            height: calc(100vh - 20px);
+            width: 100%;
+            height: calc(100vh - 100px);
             min-width: 800px;
             min-height: 400px;
+        }
+        #timeLineC {
+            border: 1px solid black;
+            box-sizing: border-box;
+            width: 100%;
+            height: 80px;
+            min-width: 800px;
+            margin: 2px 0 0 0;
         }
     </style>
 
@@ -48,17 +56,20 @@
     <div id="container">
         <object data="#{request.contextPath}/getSvg?objectId=#{mnemonicNetC.object}" id="svgDocument" type="image/svg+xml" style="width: 100%; height: 100%"/>
     </div>
-    <h:form>
-        <p:timeline id="timeline" widgetVar="timeline" value="#{mnemonicNetC.model}"
-                    locale="ru"
-                    editable="true"
-                    min="#{mnemonicNetC.min}"
-                    max="#{mnemonicNetC.max}"
-                    zoomMin="#{mnemonicNetC.zoomMin}"
-                    zoomMax="#{mnemonicNetC.zoomMax}"
-                    showCurrentTime="true">
-            <p:ajax event="add" listener="#{mnemonicNetC.add}" onstart="PF('timeline').cancelAdd()" />
-        </p:timeline>
-    </h:form>
+    <div id="timeLineC">
+        <h:form>
+            <p:timeline id="timeline" widgetVar="timeline" value="#{mnemonicNetC.model}"
+                        locale="ru"
+                        editable="true"
+                        min="#{mnemonicNetC.min}"
+                        max="#{mnemonicNetC.max}"
+                        zoomMin="#{mnemonicNetC.zoomMin}"
+                        zoomMax="#{mnemonicNetC.zoomMax}"
+                        showCurrentTime="true"
+                        width="auto">
+                <p:ajax event="add" listener="#{mnemonicNetC.add}" onstart="PF('timeline').cancelAdd()" />
+            </p:timeline>
+        </h:form>
+    </div>
 </h:body>
 </html>
