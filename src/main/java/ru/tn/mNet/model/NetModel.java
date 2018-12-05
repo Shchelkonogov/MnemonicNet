@@ -59,13 +59,11 @@ public class NetModel {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("NetModel{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", svgName='").append(svgName).append('\'');
-        sb.append(", svgId=").append(svgId);
-        sb.append(", objectId=").append(objectId);
-        sb.append(", length=").append(length);
-        sb.append('}');
-        return sb.toString();
+        return "NetModel{" + "name='" + name + '\'' +
+                ", svgName='" + svgName + '\'' +
+                ", svgId=" + svgId +
+                ", objectId=" + objectId +
+                ", length=" + length +
+                '}';
     }
 }
