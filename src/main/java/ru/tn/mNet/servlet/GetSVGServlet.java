@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ public class GetSVGServlet extends HttpServlet {
         List<Tag> graphTags = new ArrayList<>();
         int graphObjectsCount = 0;
         final int netLength = 300;
+        LocalDateTime time = LocalDateTime.now();
 
         List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"));
         System.out.println("GraphData: " + netData);
@@ -64,7 +66,21 @@ public class GetSVGServlet extends HttpServlet {
             if (!netItem.getSvgName().equals("Труба")) {
                 xCurrentPosition = graphObjectsCount * netLength;
 
-                paramData = objectParamDataBean.load(netItem.getObjectId());
+                //Расчет времени на каждом объекте (подача обратка)
+                LocalTime startTime = LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(xNetLength / 1.6))
+                        .setScale(0, RoundingMode.HALF_EVEN).longValueExact());
+                LocalTime endTime = LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf((2 * graphWidthMax - xNetLength) / 1.6))
+                        .setScale(0, RoundingMode.HALF_EVEN).longValueExact());
+
+                paramData = objectParamDataBean.load(netItem.getObjectId(),
+                        time.plusHours(startTime.getHour())
+                                .plusMinutes(startTime.getMinute())
+                                .plusSeconds(startTime.getSecond())
+                                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")),
+                        time.plusHours(endTime.getHour())
+                                .plusMinutes(endTime.getMinute())
+                                .plusSeconds(endTime.getSecond())
+                                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
 
                 //Добавляем объект на граф
                 svg = getSVG(netItem.getSvgName());
@@ -144,15 +160,12 @@ public class GetSVGServlet extends HttpServlet {
                             new Attr("x", String.valueOf(svg.getWidth() + 1)),
                             new Attr(AttrInter.STROKE_WIDTH, "0"),
                             new Attr(AttrInter.FILL, "#000000")));
-                    svgElement.setValue(String.valueOf("L: " + new BigDecimal(String.valueOf(xNetLength))
+                    svgElement.setValue(String.valueOf("L" + graphObjectsCount + ": " + new BigDecimal(String.valueOf(xNetLength))
                             .setScale(2, RoundingMode.HALF_EVEN)) + "м");
                     graphTags.add(svgElement);
 
                     //Добавляем текст со временем подачи к размерам
-                    String timeDirect = "tп: " + LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(xNetLength / 1.6))
-                            .setScale(0, RoundingMode.HALF_EVEN)
-                            .longValueExact())
-                            .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
+                    String timeDirect = "tп: " + startTime.format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
 
                     svgElement = new Tag(TagInter.TEXT, false);
                     svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
@@ -168,11 +181,7 @@ public class GetSVGServlet extends HttpServlet {
                     graphTags.add(svgElement);
 
                     //Добавляем текст со временем обратки к размерам
-                    String timeReverse = " tо: " + LocalTime.ofSecondOfDay(
-                            new BigDecimal(String.valueOf((2 * graphWidthMax - xNetLength) / 1.6))
-                                    .setScale(0, RoundingMode.HALF_EVEN)
-                                    .longValueExact())
-                            .format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
+                    String timeReverse = " tо: " + endTime.format(DateTimeFormatter.ofPattern("HHч mmм ssс"));
 
                     svgElement = new Tag(TagInter.TEXT, false);
                     svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
@@ -196,6 +205,35 @@ public class GetSVGServlet extends HttpServlet {
 
         int windowWidthMax = (graphObjectsCount - 1) * netLength;
 
+        //Добавляем текст описания графа
+        svgElement = new Tag(TagInter.TEXT, false);
+        svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
+                new Attr("xml:space", "preserve"),
+                new Attr("text-anchor", "middle"),
+                new Attr("font-family", "serif"),
+                new Attr("font-size", "20"),
+                new Attr("font-weight", "bold"),
+                new Attr("y", String.valueOf(370)),
+                new Attr("x", String.valueOf(windowWidthMax / 2)),
+                new Attr(AttrInter.STROKE_WIDTH, "0"),
+                new Attr(AttrInter.FILL, "#000000")));
+        svgElement.setValue("Мнемосхема сегмента магистральной сети");
+        graphTags.add(svgElement);
+
+        svgElement = new Tag(TagInter.TEXT, false);
+        svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
+                new Attr("xml:space", "preserve"),
+                new Attr("text-anchor", "middle"),
+                new Attr("font-family", "serif"),
+                new Attr("font-size", "20"),
+                new Attr("font-weight", "bold"),
+                new Attr("y", String.valueOf(400)),
+                new Attr("x", String.valueOf(windowWidthMax / 2)),
+                new Attr(AttrInter.STROKE_WIDTH, "0"),
+                new Attr(AttrInter.FILL, "#000000")));
+        svgElement.setValue("Время на источнике " + time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
+        graphTags.add(svgElement);
+
         Tag rootTag = new Tag(TagInter.SVG, false);
         rootTag.addAttrs(Arrays.asList(new Attr(AttrInter.WIDTH, String.valueOf(windowWidthMax)),
                 new Attr(AttrInter.HEIGHT, "1024"),
@@ -217,7 +255,6 @@ public class GetSVGServlet extends HttpServlet {
         graphTags.forEach(rootTag::addTag);
 
         String contentS = "<?xml version=\"1.0\"?>" + rootTag;
-//        System.out.println(contentS);
 
         byte[] context = contentS.getBytes("UTF-8");
 

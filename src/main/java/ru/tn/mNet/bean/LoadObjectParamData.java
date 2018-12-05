@@ -16,7 +16,9 @@ import java.sql.SQLException;
 @Stateless
 public class LoadObjectParamData {
 
-    private static final String SQL = "select * from table (mnemo.get_net_Mnemo_hist_data(?, sysdate, sysdate))";
+    private static final String SQL = "select * from table (mnemo.get_net_Mnemo_hist_data(?, " +
+            "to_date(?, 'dd.mm.yyyy HH24:mi:ss'), " +
+            "to_date(?, 'dd.mm.yyyy HH24:mi:ss')))";
 
     @Resource(name = "OracleDataSource", mappedName = "jdbc/OracleDataSource")
     private DataSource ds;
@@ -26,10 +28,15 @@ public class LoadObjectParamData {
      * @param objectId id объекта сети типа int
      * @return ObjectParamData в котором хронятся значения параметров объекта
      */
-    public ObjectParamData load(int objectId) {
+    public ObjectParamData load(int objectId, String startTime, String endTime) {
         try(Connection connect = ds.getConnection();
                 PreparedStatement stm = connect.prepareStatement(SQL)) {
             stm.setInt(1, objectId);
+            stm.setString(2, startTime);
+            stm.setString(3, endTime);
+
+            System.out.println("start: " + startTime);
+            System.out.println("end: " + endTime);
 
             ResultSet res = stm.executeQuery();
             if(res.next()) {
