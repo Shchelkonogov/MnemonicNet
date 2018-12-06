@@ -58,12 +58,28 @@ public class GetSVGServlet extends HttpServlet {
 
         double graphWidthMax = netData.stream().mapToDouble(NetModel::getLength).sum();
 
+        //Высчитываем время на ТЭЦ так как в момент запроса время должно быть на цтп
+        LocalTime timeOnTECDif = LocalTime.ofSecondOfDay(new BigDecimal(String.valueOf(graphWidthMax / 1.6))
+                .setScale(0, RoundingMode.HALF_EVEN).longValueExact());
+        LocalDateTime timeOnTEC = time
+                .minusHours(timeOnTECDif.getHour())
+                .minusMinutes(timeOnTECDif.getMinute())
+                .minusSeconds(timeOnTECDif.getSecond());
+
         double xCurrentPosition;
         double xNetLength = 0;
         ObjectParamData paramData;
+        int objectIndex = 0;
+        List<Integer> objectsList = new ArrayList<>();
+        List<BigDecimal> objectsLength = new ArrayList<>();
+
         for(NetModel netItem: netData) {
             System.out.println("Draw " + netItem.getSvgName());
             if (!netItem.getSvgName().equals("Труба")) {
+                objectsList.add(netItem.getObjectId());
+                objectsLength.add(new BigDecimal(xNetLength).setScale(2, RoundingMode.HALF_EVEN));
+
+                objectIndex++;
                 xCurrentPosition = graphObjectsCount * netLength;
 
                 //Расчет времени на каждом объекте (подача обратка)
@@ -73,11 +89,11 @@ public class GetSVGServlet extends HttpServlet {
                         .setScale(0, RoundingMode.HALF_EVEN).longValueExact());
 
                 paramData = objectParamDataBean.load(netItem.getObjectId(),
-                        time.plusHours(startTime.getHour())
+                        timeOnTEC.plusHours(startTime.getHour())
                                 .plusMinutes(startTime.getMinute())
                                 .plusSeconds(startTime.getSecond())
                                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")),
-                        time.plusHours(endTime.getHour())
+                        timeOnTEC.plusHours(endTime.getHour())
                                 .plusMinutes(endTime.getMinute())
                                 .plusSeconds(endTime.getSecond())
                                 .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
@@ -86,8 +102,8 @@ public class GetSVGServlet extends HttpServlet {
                 svg = getSVG(netItem.getSvgName());
 
                 String objectName = insertDataToSVG(svg.getValue(), "Name", netItem.getName());
-                objectName = insertDataToSVG(objectName, "T1", paramData.getT1());
-                objectName = insertDataToSVG(objectName, "T2", paramData.getT2());
+                objectName = insertDataToSVG(objectName, "T1", paramData.getT1(), String.valueOf(objectIndex));
+                objectName = insertDataToSVG(objectName, "T2", paramData.getT2(), String.valueOf(objectIndex));
 
                 svgElement = new Tag(TagInter.GROUP, false);
                 svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(" + (xCurrentPosition - (svg.getWidth() / 2))
@@ -222,6 +238,7 @@ public class GetSVGServlet extends HttpServlet {
 
         svgElement = new Tag(TagInter.TEXT, false);
         svgElement.addAttrs(Arrays.asList(new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
+                new Attr("id", "timeID"),
                 new Attr("xml:space", "preserve"),
                 new Attr("text-anchor", "middle"),
                 new Attr("font-family", "serif"),
@@ -231,9 +248,45 @@ public class GetSVGServlet extends HttpServlet {
                 new Attr("x", String.valueOf(windowWidthMax / 2)),
                 new Attr(AttrInter.STROKE_WIDTH, "0"),
                 new Attr(AttrInter.FILL, "#000000")));
-        svgElement.setValue("Время на источнике " + time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
+        svgElement.setValue("Время на потребителе " + time.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
         graphTags.add(svgElement);
 
+        //Вставляем невидимые параметры svg элемента, что бы дальше с ним работать
+        svgElement = new Tag(TagInter.TEXT, false);
+        svgElement.addAttrs(Arrays.asList(new Attr("id", "graphWidthMax"),
+                new Attr("y", String.valueOf(370)),
+                new Attr("x", String.valueOf(windowWidthMax / 2)),
+                new Attr("opacity", "0")));
+        svgElement.setValue(String.valueOf(graphWidthMax));
+        graphTags.add(svgElement);
+
+        StringBuilder objects = new StringBuilder();
+        for (Integer item: objectsList) {
+            objects.append(' ').append(item);
+        }
+
+        svgElement = new Tag(TagInter.TEXT, false);
+        svgElement.addAttrs(Arrays.asList(new Attr("id", "objects"),
+                new Attr("y", String.valueOf(370)),
+                new Attr("x", String.valueOf(windowWidthMax / 2)),
+                new Attr("opacity", "0")));
+        svgElement.setValue(objects.toString().trim());
+        graphTags.add(svgElement);
+
+        StringBuilder lengths = new StringBuilder();
+        for (BigDecimal item: objectsLength) {
+            lengths.append(' ').append(item);
+        }
+
+        svgElement = new Tag(TagInter.TEXT, false);
+        svgElement.addAttrs(Arrays.asList(new Attr("id", "lengths"),
+                new Attr("y", String.valueOf(370)),
+                new Attr("x", String.valueOf(windowWidthMax / 2)),
+                new Attr("opacity", "0")));
+        svgElement.setValue(lengths.toString().trim());
+        graphTags.add(svgElement);
+
+        //Создаем корневой тег
         Tag rootTag = new Tag(TagInter.SVG, false);
         rootTag.addAttrs(Arrays.asList(new Attr(AttrInter.WIDTH, String.valueOf(windowWidthMax)),
                 new Attr(AttrInter.HEIGHT, "1024"),
@@ -285,9 +338,21 @@ public class GetSVGServlet extends HttpServlet {
      * @param svgPart текст svg элемента
      * @param id имя id тега text в который надо внести новое значение
      * @param value новое значение
+     * @param index индекс для добавление в id
+     * @return полученная строка, после изменения
+     */
+    private String insertDataToSVG(String svgPart, String id, String value, String index) {
+        return svgPart.replaceAll("(<text .*id=\")(" + id + ")(\".*>)(.*)(</text>)", "$1" + id + "_" + index + "$3" + value + "$5");
+    }
+
+    /**
+     * Вставляем в тег text новые значения
+     * @param svgPart текст svg элемента
+     * @param id имя id тега text в который надо внести новое значение
+     * @param value новое значение
      * @return полученная строка, после изменения
      */
     private String insertDataToSVG(String svgPart, String id, String value) {
-        return svgPart.replaceAll("(<text .*id=\"" + id + "\".*>)(.*)(</text>)", "$1" + value + "$3");
+        return insertDataToSVG(svgPart, id, value, "");
     }
 }

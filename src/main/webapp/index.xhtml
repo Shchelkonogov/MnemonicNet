@@ -58,6 +58,7 @@
     </div>
     <div id="timeLineC">
         <h:form>
+            <p:remoteCommand name="jsCall" action="#{mnemonicNetC.sendData}"/>
             <p:timeline id="timeline" widgetVar="timeline" value="#{mnemonicNetC.model}"
                         locale="ru"
                         editable="true"

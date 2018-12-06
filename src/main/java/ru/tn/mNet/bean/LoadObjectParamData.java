@@ -35,8 +35,8 @@ public class LoadObjectParamData {
             stm.setString(2, startTime);
             stm.setString(3, endTime);
 
-            System.out.println("start: " + startTime);
-            System.out.println("end: " + endTime);
+            System.out.println("LoadObjectParamData.load start: " + startTime);
+            System.out.println("LoadObjectParamData.load end: " + endTime);
 
             ResultSet res = stm.executeQuery();
             if(res.next()) {
