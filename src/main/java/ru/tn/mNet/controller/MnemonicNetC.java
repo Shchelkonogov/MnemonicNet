@@ -163,6 +163,8 @@ public class MnemonicNetC implements Serializable {
 
         ObjectParamData paramData;
         for (int i = 0; i < objectsList.size(); i++) {
+            System.out.println("MnemonicNetC.sendData load object: " + objectsList.get(i));
+
             double length = Double.valueOf(objectsLength.get(i));
 
             //Расчет времени на каждом объекте (подача обратка)
