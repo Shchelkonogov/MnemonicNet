@@ -1,7 +1,6 @@
 package ru.tn.mNet.controller;
 
 import org.primefaces.PrimeFaces;
-import org.primefaces.context.RequestContext;
 import org.primefaces.event.timeline.TimelineAddEvent;
 import org.primefaces.model.timeline.TimelineModel;
 import ru.tn.mNet.bean.LoadObjectParamData;
@@ -9,6 +8,7 @@ import ru.tn.mNet.model.ObjectParamData;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
+import javax.faces.FacesException;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.view.ViewScoped;
@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Контроллер для мнемосхемы сети
@@ -121,6 +122,10 @@ public class MnemonicNetC implements Serializable {
      * @param e событие двойного клика
      */
     public void add(TimelineAddEvent e) {
+        if(Objects.isNull(object)) {
+            throw new FacesException("no such object");
+        }
+
         SimpleDateFormat sdf = new SimpleDateFormat(PARSE_PATTERN);
         String date = sdf.format(e.getStartDate());
 
@@ -185,6 +190,8 @@ public class MnemonicNetC implements Serializable {
 
             changeValue("T1_" + (i + 1), paramData.getT1());
             changeValue("T2_" + (i + 1), paramData.getT2());
+            changeValue("T1п_" + (i + 1), paramData.getT1p());
+            changeValue("T2п_" + (i + 1), paramData.getT2p());
         }
     }
 
