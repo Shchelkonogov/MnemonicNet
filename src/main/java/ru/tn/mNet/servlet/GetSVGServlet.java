@@ -56,6 +56,16 @@ public class GetSVGServlet extends HttpServlet {
         List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"));
         System.out.println("GraphData: " + netData);
 
+        if(netData.isEmpty() || netData.get(0).getName().equals("ERROR")) {
+            byte[] context = bean.getSvg("NET_error.svg").getBytes("UTF-8");
+
+            resp.setContentType("image/svg+xml");
+            resp.setContentLength(context.length);
+            resp.getOutputStream().write(context);
+
+            return;
+        }
+
         double graphWidthMax = netData.stream().mapToDouble(NetModel::getLength).sum();
 
         //Высчитываем время на ТЭЦ так как в момент запроса время должно быть на цтп
@@ -104,6 +114,8 @@ public class GetSVGServlet extends HttpServlet {
                 String objectName = insertDataToSVG(svg.getValue(), "Name", netItem.getName());
                 objectName = insertDataToSVG(objectName, "T1", paramData.getT1(), String.valueOf(objectIndex));
                 objectName = insertDataToSVG(objectName, "T2", paramData.getT2(), String.valueOf(objectIndex));
+                objectName = insertDataToSVG(objectName, "T1п", paramData.getT1p(), String.valueOf(objectIndex));
+                objectName = insertDataToSVG(objectName, "T2п", paramData.getT2p(), String.valueOf(objectIndex));
 
                 svgElement = new Tag(TagInter.GROUP, false);
                 svgElement.addAttr(new Attr(AttrInter.TRANSFORM, "translate(" + (xCurrentPosition - (svg.getWidth() / 2))
