@@ -5,7 +5,7 @@ jQuery(window).on('load', function () {
         fit: true,
         center: true,
         minZoom: 0.5,
-        maxZoom: 15,
+        maxZoom: 25,
         zoomScaleSensitivity: 0.5
     });
 
