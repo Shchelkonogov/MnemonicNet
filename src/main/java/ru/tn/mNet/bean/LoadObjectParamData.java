@@ -40,7 +40,7 @@ public class LoadObjectParamData {
 
             ResultSet res = stm.executeQuery();
             if(res.next()) {
-                return new ObjectParamData(res.getString(1), res.getString(2));
+                return new ObjectParamData(res.getString(1), res.getString(2), res.getString(3), res.getString(4));
             }
         } catch(SQLException e) {
             e.printStackTrace();
