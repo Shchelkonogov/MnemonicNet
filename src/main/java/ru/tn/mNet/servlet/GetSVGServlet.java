@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -57,7 +58,7 @@ public class GetSVGServlet extends HttpServlet {
         System.out.println("GraphData: " + netData);
 
         if(netData.isEmpty() || netData.get(0).getName().equals("ERROR")) {
-            byte[] context = bean.getSvg("NET_error.svg").getBytes("UTF-8");
+            byte[] context = bean.getSvg("NET_error.svg").getBytes(StandardCharsets.UTF_8);
 
             resp.setContentType("image/svg+xml");
             resp.setContentLength(context.length);
@@ -188,8 +189,8 @@ public class GetSVGServlet extends HttpServlet {
                             new Attr("x", String.valueOf(svg.getWidth() + 1)),
                             new Attr(AttrInter.STROKE_WIDTH, "0"),
                             new Attr(AttrInter.FILL, "#000000")));
-                    svgElement.setValue(String.valueOf("L" + graphObjectsCount + ": " + new BigDecimal(String.valueOf(xNetLength))
-                            .setScale(2, RoundingMode.HALF_EVEN)) + "м");
+                    svgElement.setValue("L" + graphObjectsCount + ": " + new BigDecimal(String.valueOf(xNetLength))
+                            .setScale(2, RoundingMode.HALF_EVEN) + "м");
                     graphTags.add(svgElement);
 
                     //Добавляем текст со временем подачи к размерам
@@ -321,7 +322,7 @@ public class GetSVGServlet extends HttpServlet {
 
         String contentS = "<?xml version=\"1.0\"?>" + rootTag;
 
-        byte[] context = contentS.getBytes("UTF-8");
+        byte[] context = contentS.getBytes(StandardCharsets.UTF_8);
 
         resp.setContentType("image/svg+xml");
         resp.setContentLength(context.length);
