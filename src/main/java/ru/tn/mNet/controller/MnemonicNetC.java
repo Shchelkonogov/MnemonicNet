@@ -10,8 +10,9 @@ import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.faces.FacesException;
 import javax.faces.bean.ManagedBean;
-import javax.faces.bean.ManagedProperty;
-import javax.faces.view.ViewScoped;
+import javax.faces.bean.ViewScoped;
+import javax.faces.context.FacesContext;
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -33,18 +34,6 @@ import java.util.Objects;
 @ViewScoped
 public class MnemonicNetC implements Serializable {
 
-    @ManagedProperty("#{param.graphWidthMax}")
-    private String graphWidthMax;
-
-    @ManagedProperty("#{param.date}")
-    private String date;
-
-    @ManagedProperty("#{param.objects}")
-    private String objects;
-
-    @ManagedProperty("#{param.lengths}")
-    private String lengths;
-
     @EJB
     private LoadObjectParamData bean;
 
@@ -54,6 +43,7 @@ public class MnemonicNetC implements Serializable {
     private long zoomMin;
     private long zoomMax;
     private String object;
+    private int type = 1;
 
     private static final String PARSE_PATTERN = "dd.MM.yyyy HH:mm:ss";
 
@@ -101,20 +91,12 @@ public class MnemonicNetC implements Serializable {
         this.object = object;
     }
 
-    public void setGraphWidthMax(String graphWidthMax) {
-        this.graphWidthMax = graphWidthMax;
+    public int getType() {
+        return type;
     }
 
-    public void setDate(String date) {
-        this.date = date;
-    }
-
-    public void setObjects(String objects) {
-        this.objects = objects;
-    }
-
-    public void setLengths(String lengths) {
-        this.lengths = lengths;
+    public void setType(int type) {
+        this.type = type;
     }
 
     /**
@@ -148,6 +130,13 @@ public class MnemonicNetC implements Serializable {
      * Метод для отрисовки новых значений на мнемосхеме (вызывается js методом)
      */
     public void sendData() {
+        StringBuilder script = new StringBuilder();
+
+        String graphWidthMax = getParameter("graphWidthMax");
+        String date = getParameter("date");
+        String objects = getParameter("objects");
+        String lengths = getParameter("lengths");
+
         LocalDateTime dateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(PARSE_PATTERN));
         List<String> objectsList = Arrays.asList(objects.split(" "));
         List<String> objectsLength = Arrays.asList(lengths.split(" "));
@@ -188,11 +177,14 @@ public class MnemonicNetC implements Serializable {
                             .plusSeconds(endTime.getSecond())
                             .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
 
-            changeValue("T1_" + (i + 1), paramData.getT1());
-            changeValue("T2_" + (i + 1), paramData.getT2());
-            changeValue("T1п_" + (i + 1), paramData.getT1p());
-            changeValue("T2п_" + (i + 1), paramData.getT2p());
+            script.append(changeValue("T1_" + (i + 1), paramData.getT1()));
+            script.append(changeValue("T2_" + (i + 1), paramData.getT2()));
+            script.append(changeValue("T1п_" + (i + 1), paramData.getT1p()));
+            script.append(changeValue("T2п_" + (i + 1), paramData.getT2p()));
         }
+
+        script.append("PF('bui').hide();");
+        PrimeFaces.current().executeScript(script.toString());
     }
 
     /**
@@ -200,9 +192,19 @@ public class MnemonicNetC implements Serializable {
      * @param name имя тега
      * @param value новое значение
      */
-    private void changeValue(String name, String value) {
-        String script = "jQuery('#" + name + "', svgDom).text('" + value + "');";
+    private String changeValue(String name, String value) {
+        return "jQuery('#" + name + "', svgDom).text('" + value + "');";
+    }
 
-        PrimeFaces.current().executeScript(script);
+    private String getParameter(String name) {
+        return FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap().get(name);
+    }
+
+    public void redirect() {
+        try {
+            FacesContext.getCurrentInstance().getExternalContext().redirect("/mNet/?objectId=" + object + "&type=" + (type == 1 ? 0 : 1));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

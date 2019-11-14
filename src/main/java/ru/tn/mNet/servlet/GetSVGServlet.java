@@ -54,7 +54,7 @@ public class GetSVGServlet extends HttpServlet {
         final int netLength = 300;
         LocalDateTime time = LocalDateTime.now();
 
-        List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"));
+        List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"), req.getParameter("type"));
         System.out.println("GraphData: " + netData);
 
         if(netData.isEmpty() || netData.get(0).getName().equals("ERROR")) {
@@ -305,7 +305,8 @@ public class GetSVGServlet extends HttpServlet {
                 new Attr(AttrInter.HEIGHT, "1024"),
                 new Attr(AttrInter.XMLNS, "http://www.w3.org/2000/svg"),
                 new Attr("xmlns:svg", "http://www.w3.org/2000/svg"),
-                new Attr("xmlns:xlink", "http://www.w3.org/1999/xlink")));
+                new Attr("xmlns:xlink", "http://www.w3.org/1999/xlink"),
+                new Attr("id", "mnemonicSVG")));
 
         //Линия на которой размещаются все объекты графа
         svgElement = new Tag(TagInter.LINE, true);

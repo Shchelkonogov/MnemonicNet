@@ -18,8 +18,10 @@ import java.util.List;
 @Stateless
 public class LoadNetData {
 
-    private static final String SQL = "select n1, n2, n3, n4, n5, rownum from table(mnemo.get_net_mnemo_graph(?)) " +
+    private static final String SQL_TYPE_1 = "select n1, n2, n3, n4, n5, rownum from table(mnemo.get_net_mnemo_graph(?)) " +
             "where n5 is not null or n3 = 'Труба' order by rownum desc";
+    private static final String SQL_TYPE_0 = "select n1, n2, n3, n4, n5, rownum from table(mnemo.get_net_mnemo_graph(?)) " +
+            "order by rownum desc";
     private static final String SQL_ALTER = "alter session set NLS_NUMERIC_CHARACTERS='.,'";
 
     @Resource(name = "OracleDataSource", mappedName = "jdbc/OracleDataSource")
@@ -30,22 +32,43 @@ public class LoadNetData {
      * @param object id объекта бд ввиде String
      * @return список объектов NetModel представляющий собой элементы сети
      */
-    public List<NetModel> loadData(String object) {
+    public List<NetModel> loadData(String object, String type) {
         List<NetModel> result = new ArrayList<>();
         try(Connection connect = ds.getConnection();
-                PreparedStatement stmAlter = connect.prepareStatement(SQL_ALTER);
-                PreparedStatement stm = connect.prepareStatement(SQL)) {
-            stmAlter.executeQuery();
+                PreparedStatement stmAlter = connect.prepareStatement(SQL_ALTER)) {
+            String sql;
 
-            stm.setString(1, object);
+            switch (type) {
+                case "0": {
+                    sql = SQL_TYPE_0;
+                    break;
+                }
+                case "1": {
+                    sql = SQL_TYPE_1;
+                    break;
+                }
+                default: {
+                    sql = SQL_TYPE_0;
+                }
+            }
 
-            ResultSet res = stm.executeQuery();
-            while(res.next()) {
-                result.add(new NetModel(res.getString(1),
-                        res.getString(3),
-                        res.getInt(2),
-                        res.getInt(5),
-                        res.getDouble(4)));
+            try (PreparedStatement stm = connect.prepareStatement(sql)) {
+                stmAlter.executeQuery();
+
+                stm.setString(1, object);
+
+                ResultSet res = stm.executeQuery();
+                while(res.next()) {
+                    result.add(new NetModel(res.getString(1),
+                            res.getString(3),
+                            res.getInt(2),
+                            res.getInt(5),
+                            res.getDouble(4)));
+                }
+
+                System.out.println(result);
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         } catch(SQLException e) {
             e.printStackTrace();
