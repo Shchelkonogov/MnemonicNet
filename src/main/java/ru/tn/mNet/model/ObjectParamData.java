@@ -5,7 +5,10 @@ package ru.tn.mNet.model;
  */
 public class ObjectParamData {
 
-    private String t1, t2, t1p, t2p;
+    private String t1 = "", t2 = "", t1p = "", t2p = "";
+
+    public ObjectParamData() {
+    }
 
     /**
      * Конструктор модели параметров
