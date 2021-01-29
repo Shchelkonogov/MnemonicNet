@@ -52,7 +52,7 @@ public class GetSVGServlet extends HttpServlet {
         List<Tag> graphTags = new ArrayList<>();
         int graphObjectsCount = 0;
         final int netLength = 300;
-        LocalDateTime time = LocalDateTime.now();
+        LocalDateTime time = LocalDateTime.parse(req.getParameter("date"), DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"));
 
         List<NetModel> netData = netDataBean.loadData(req.getParameter("objectId"), req.getParameter("type"));
         System.out.println("GraphData: " + netData);

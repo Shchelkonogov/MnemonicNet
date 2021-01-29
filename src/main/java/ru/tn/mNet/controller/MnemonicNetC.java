@@ -17,11 +17,11 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -44,6 +44,7 @@ public class MnemonicNetC implements Serializable {
     private long zoomMax;
     private String object;
     private int type = 1;
+    private LocalDateTime date = LocalDateTime.now();
 
     private static final String PARSE_PATTERN = "dd.MM.yyyy HH:mm:ss";
 
@@ -58,9 +59,17 @@ public class MnemonicNetC implements Serializable {
 
         zoomMax = 1000L * 60 * 60 * 24 * 3;
 
-        LocalDate date = LocalDate.now().plusDays(1);
-        min = Date.from(date.minusDays(3).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        max = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        try {
+            String date = FacesContext.getCurrentInstance().getExternalContext().getRequestParameterMap().get("date");
+            if (date != null) {
+                this.date = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(PARSE_PATTERN));
+            }
+        } catch (DateTimeParseException e) {
+            System.out.println("date parse exception: " + e.getMessage());
+        }
+
+        min = Date.from(date.minusDays(1).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+        max = Date.from(date.plusDays(2).toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
     }
 
     public TimelineModel getModel() {
@@ -99,6 +108,10 @@ public class MnemonicNetC implements Serializable {
         this.type = type;
     }
 
+    public String getDate() {
+        return date.format(DateTimeFormatter.ofPattern(PARSE_PATTERN));
+    }
+
     /**
      * Обработчик двойного клика на timeline
      * @param e событие двойного клика
@@ -110,6 +123,7 @@ public class MnemonicNetC implements Serializable {
 
         SimpleDateFormat sdf = new SimpleDateFormat(PARSE_PATTERN);
         String date = sdf.format(e.getStartDate());
+        this.date = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(PARSE_PATTERN));
 
         String script = "var svgObject = document.getElementById('svgDocument');" +
                 "if('contentDocument' in svgObject) {" +
@@ -202,7 +216,8 @@ public class MnemonicNetC implements Serializable {
 
     public void redirect() {
         try {
-            FacesContext.getCurrentInstance().getExternalContext().redirect("/mNet/?objectId=" + object + "&type=" + (type == 1 ? 0 : 1));
+            FacesContext.getCurrentInstance().getExternalContext().redirect("/mNet/?objectId=" + object +
+                    "&type=" + (type == 1 ? 0 : 1) + "&date=" + date.format(DateTimeFormatter.ofPattern(PARSE_PATTERN)));
         } catch (IOException e) {
             e.printStackTrace();
         }

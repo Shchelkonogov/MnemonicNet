@@ -65,7 +65,8 @@
     </p:ajaxStatus>
 
     <div id="container">
-        <object data="#{request.contextPath}/getSvg?objectId=#{mnemonicNetC.object}&amp;type=#{mnemonicNetC.type}" id="svgDocument" type="image/svg+xml" style="width: 100%; height: 100%"/>
+        <object data="#{request.contextPath}/getSvg?objectId=#{mnemonicNetC.object}&amp;type=#{mnemonicNetC.type}&amp;date=#{mnemonicNetC.date}"
+                id="svgDocument" type="image/svg+xml" style="width: 100%; height: 100%"/>
     </div>
 
     <div id="timeLineC">
@@ -75,11 +76,13 @@
             <p:timeline id="timeline" widgetVar="timeline" value="#{mnemonicNetC.model}"
                         locale="ru"
                         editable="true"
+                        start="#{mnemonicNetC.min}"
+                        end="#{mnemonicNetC.max}"
                         min="#{mnemonicNetC.min}"
                         max="#{mnemonicNetC.max}"
                         zoomMin="#{mnemonicNetC.zoomMin}"
                         zoomMax="#{mnemonicNetC.zoomMax}"
-                        showCurrentTime="true"
+                        showCurrentTime="false"
                         width="auto">
                 <p:ajax event="add" listener="#{mnemonicNetC.add}" onstart="PF('bui').show(); PF('timeline').cancelAdd();"/>
             </p:timeline>
